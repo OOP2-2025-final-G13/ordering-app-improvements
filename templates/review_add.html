@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>レビュー追加</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base-style.css') }}">
+</head>
+
+<body>
+    <h1>新しい製品を追加</h1>
+    <ul class="breadcrumb">
+        <li><a href="{{ url_for('index') }}">HOME</a></li>
+        <li><a href="{{ url_for('review.list') }}">レビュー一覧</a></li>
+        <li>新規レビュー</li>
+    </ul>
+
+    <form action="{{ url_for('review.add') }}" method="post">
+        <label>評価: <input type="number" name="rating" required></label><br>
+        <label>コメント: <input type="text" name="comment" required></label><br>
+        <button type="submit">追加</button>
+    </form>
+</body>
+</html>
