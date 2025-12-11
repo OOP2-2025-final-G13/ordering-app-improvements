@@ -20,6 +20,11 @@
 
 > 動作に必要な条件を書いてください。
 
+以下をインストール
+```bash
+pip install peewee
+```
+
 ```bash
 python 3.13 or higher
 
