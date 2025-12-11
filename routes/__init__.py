@@ -9,6 +9,6 @@ blueprints = [
   user_bp,
   product_bp,
   order_bp,
-  report
+  report,
   review_bp
 ]
