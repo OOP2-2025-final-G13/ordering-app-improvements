@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>統計</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base-style.css') }}">
+</head>
+<body>
+    <h1>売上統計</h1>
+    <ul class="breadcrumb">
+        <li><a href="{{ url_for('index') }}">HOME</a></li>
+        <li>統計</li>
+    </ul>
+
+    <!-- 売上統計セクション -->
+    <h2>売上サマリー</h2>
+    <p>総売上: ¥{{ "{:,.0f}".format(total_sales) }}</p>
+    <p>今月の売上: ¥{{ "{:,.0f}".format(current_month_sales) }}</p>
+
+    <!-- 月間売上検索 -->
+    <h2>月間売上検索</h2>
+    <form action="{{ url_for('report.list') }}" method="get">
+        <label>年: <input type="number" name="year" value="{{ selected_year or '' }}" min="2020" max="2030" placeholder="2024"></label>
+        <label>月: <input type="number" name="month" value="{{ selected_month or '' }}" min="1" max="12" placeholder="1-12"></label>
+        <button type="submit">検索</button>
+    </form>
+    {% if selected_month_sales is not none %}
+    <p>{{ selected_year }}年{{ selected_month }}月の売上: ¥{{ "{:,.0f}".format(selected_month_sales) }}</p>
+    {% endif %}
+
+    <!-- 月別売上推移 -->
+    <h2>月別売上推移（過去12ヶ月）</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>年月</th>
+                <th>売上</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for data in monthly_data %}
+            <tr>
+                <td>{{ data.year }}年{{ data.month }}月</td>
+                <td>¥{{ "{:,.0f}".format(data.sales) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
