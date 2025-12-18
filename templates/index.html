@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <title>注文管理システム</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='base-style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      /* ちょっとした余白 */
+      body { padding: 16px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans JP', 'Hiragino Kaku Gothic ProN', sans-serif; }
+    </style>
 </head>
 <body>
     <h1>注文管理システム</h1>
@@ -14,5 +19,91 @@
       <li><a href="{{ url_for('report.list') }}">統計</a></li>
       <li><a href="{{ url_for('review.list') }}">レビュー</a></li>
     </ul>
+
+    <!-- 自動で JSON を読み込んで表示（選択フォームは不要） -->
+    <h2>販売データ（order.json）の円グラフ：商品ごとの販売個数</h2>
+    <div style="display:flex; gap:40px; align-items:flex-start;">
+      <div>
+        <h3>order: 商品別売上個数（円グラフ）</h3>
+        <div style="width:420px; height:300px;">
+          <canvas id="orderPie"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h2>report.json（月別売上）</h2>
+    <div style="width:840px; height:300px; margin-top:16px;">
+      <canvas id="reportChart"></canvas>
+    </div>
+
+    <script>
+      // data/order.json と data/report.json をフェッチ（自動読み込み）
+      async function loadJson(path) {
+        try {
+          const res = await fetch(path);
+          if (!res.ok) return null;
+          return await res.json();
+        } catch (e) {
+          return null;
+        }
+      }
+
+      // 注文データを受け取り、product_id ごとの個数を集計
+      function aggregateOrderCounts(orderArray) {
+        const counts = {};
+        for (const o of (orderArray || [])) {
+          // product_id がオブジェクトの key か、product プロパティかを想定
+          const pid = o.product_id ?? o.product ?? null;
+          if (pid == null) continue;
+          counts[pid] = (counts[pid] || 0) + 1;
+        }
+        return counts;
+      }
+
+      (async function() {
+        const order = await loadJson('/data/order.json');
+        const report = await loadJson('/data/report.json');
+
+        // order -> product_id ごとの個数を集計して円グラフ
+        const counts = aggregateOrderCounts(order);
+        const labels = Object.keys(counts);
+        const dataValues = Object.values(counts);
+
+        const pieCtx = document.getElementById('orderPie').getContext('2d');
+        new Chart(pieCtx, {
+          type: 'pie',
+          data: {
+            labels: labels,
+            datasets: [{
+              data: dataValues,
+              backgroundColor: labels.map((_, i) => `hsl(${(i*60)%360} 70% 60%)`)
+            }]
+          },
+          options: { responsive: true }
+        });
+
+        // report は月別データ（[{year,month,sales},...]) を想定して折れ線で表示
+        const monthly = report || [];
+        const rlabels = monthly.map(d => `${d.year}年${d.month}月`);
+        const rvalues = monthly.map(d => d.sales || 0);
+
+        const rctx = document.getElementById('reportChart').getContext('2d');
+        new Chart(rctx, {
+          type: 'line',
+          data: {
+            labels: rlabels,
+            datasets: [{
+              label: '売上',
+              data: rvalues,
+              borderColor: 'rgba(75, 192, 192, 1)',
+              backgroundColor: 'rgba(75, 192, 192, 0.1)',
+              tension: 0.3,
+              fill: true
+            }]
+          },
+          options: { responsive: true, maintainAspectRatio: false }
+        });
+      })();
+    </script>
 </body>
 </html>
