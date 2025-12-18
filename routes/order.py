@@ -1,6 +1,10 @@
 from flask import Blueprint, render_template, request, redirect, url_for
-from models import Order, User, Product
+from models.order import Order
+from models.user import User
+from models.product import Product
 from datetime import datetime
+from flask import jsonify
+from peewee import fn
 
 order_bp = Blueprint('order', __name__, url_prefix='/orders')
 
@@ -42,3 +46,42 @@ def edit(order_id):
     users = User.select()
     products = Product.select()
     return render_template('order_edit.html', order=order, users=users, products=products)
+
+@order_bp.route('/stats/product-ratio')
+def product_ratio():
+    """
+    商品ごとの購入数量割合を返す
+    形式:
+    [
+      { "product": "りんご", "quantity": 10, "ratio": 25.0 },
+      { "product": "みかん", "quantity": 30, "ratio": 75.0 }
+    ]
+    """
+
+    # 商品ごとの数量合計を取得
+    query = (
+        Order
+        .select(
+            Product.name.alias('product_name'),
+            fn.SUM(Order.quantity).alias('total_quantity')
+        )
+        .join(Product)
+        .group_by(Product.id)
+    )
+
+    # 全商品の数量合計
+    grand_total = sum(row.total_quantity for row in query)
+
+    result = []
+    for row in query:
+        ratio = 0
+        if grand_total > 0:
+            ratio = row.total_quantity / grand_total * 100
+
+        result.append({
+            'product': row.product_name,
+            'quantity': row.total_quantity,
+            'ratio': round(ratio, 2)
+        })
+
+    return jsonify(result)
